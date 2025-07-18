@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>動画管理表</title>
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --secondary-blue: #3b82f6;
+            --light-blue: #dbeafe;
+            --accent-blue: #60a5fa;
+            --dark-blue: #1e40af;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --background-light: #f8fafc;
+            --white: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--background-light) 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 2rem;
+            background: var(--background-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: var(--white);
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 14px 0 rgba(96, 165, 250, 0.4);
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 rgba(96, 165, 250, 0.5);
+        }
+
+        .table-container {
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th:first-child {
+            border-top-left-radius: 12px;
+        }
+
+        th:last-child {
+            border-top-right-radius: 12px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        tbody tr:hover {
+            background: linear-gradient(135deg, var(--light-blue) 0%, rgba(248, 250, 252, 0.8) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .number-col { 
+            width: 80px; 
+            text-align: center; 
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+        .title-col { width: 220px; }
+        .person-col { width: 120px; }
+        .progress-col { width: 140px; }
+        .instruction-col { width: 180px; }
+        .storage-col { width: 180px; }
+        .completed-col { width: 180px; }
+        .memo-col { width: 200px; }
+        .action-col { width: 120px; text-align: center; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: var(--white);
+            color: var(--text-dark);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: var(--white);
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--primary-blue) 100%);
+            color: var(--white);
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                padding: 1.5rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            button {
+                justify-content: center;
+            }
+            
+            .table-container {
+                padding: 1rem;
+            }
+            
+            th, td {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>動画管理システム</h1>
+            <p class="subtitle">プロジェクトの進捗を効率的に管理</p>
+        </div>
+        <div class="controls">
+            <button class="btn-primary" id="addRowBtn">+ 新規追加</button>
+            <button class="btn-success" onclick="saveData()">保存</button>
+            <button class="btn-info" onclick="loadData()">読み込み</button>
+            <button class="btn-info" onclick="exportCSV()">CSV出力</button>
+        </div>
+        <div id="statusIndicator" class="status-indicator">自動保存中...</div>
+        <div class="table-container">
+            <table id="videoTable">
+            <thead>
+                <tr>
+                    <th class="number-col">番号</th>
+                    <th class="title-col">動画タイトル</th>
+                    <th class="person-col">担当者</th>
+                    <th class="progress-col">進捗状況</th>
+                    <th class="instruction-col">指示内容</th>
+                    <th class="storage-col">格納場所</th>
+                    <th class="completed-col">完成品格納場所</th>
+                    <th class="memo-col">メモ</th>
+                    <th class="action-col">操作</th>
+                </tr>
+            </thead>
+            <tbody id="videoTableBody">
+                <!-- 動的に行が追加されます -->
+            </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let rowCounter = 1;
+        let autoSaveTimeout = null;
+        let hasUnsavedChanges = false;
+
+        // ページ読み込み時にローカルストレージからデータを復元
+        window.addEventListener('load', function() {
+            loadFromLocalStorage();
+        });
+        
+        // DOMContentLoadedイベントでも初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            // 既にロードされていなければ初期化
+            const tableBody = document.getElementById('videoTableBody');
+            if (tableBody && tableBody.children.length === 0) {
+                loadFromLocalStorage();
+            }
+            
+            // ボタンのクリックイベントを確実に設定
+            const addButton = document.getElementById('addRowBtn');
+            if (addButton) {
+                addButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Add button clicked');
+                    addRow();
+                });
+            }
+        });
+
+        // オートセーブ機能
+        function autoSave() {
+            if (hasUnsavedChanges) {
+                const tableData = collectTableData();
+                localStorage.setItem('videoManagementData', JSON.stringify(tableData));
+                showStatusIndicator('自動保存完了');
+                hasUnsavedChanges = false;
+            }
+        }
+
+        // データ変更時に呼び出される関数
+        function onDataChange() {
+            hasUnsavedChanges = true;
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(autoSave, 1000); // 1秒後に自動保存
+        }
+
+        // ステータス表示
+        function showStatusIndicator(message) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.style.display = 'block';
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        }
+
+        // ローカルストレージからデータを読み込み
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('videoManagementData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    loadTableData(data);
+                    showStatusIndicator('データを復元しました');
+                } catch (err) {
+                    console.error('データの読み込みに失敗しました:', err);
+                }
+            } else {
+                addRow(); // 初期行を追加
+            }
+        }
+
+        // テーブルデータを収集
+        function collectTableData() {
+            const tableData = [];
+            const rows = document.querySelectorAll('#videoTableBody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = {
+                    number: cells[0].textContent,
+                    title: cells[1].querySelector('input').value,
+                    person: cells[2].querySelector('input').value,
+                    progress: cells[3].querySelector('select').value,
+                    instruction: cells[4].querySelector('textarea').value,
+                    storage: cells[5].querySelector('input').value,
+                    completed: cells[6].querySelector('input').value,
+                    memo: cells[7].querySelector('textarea').value
+                };
+                tableData.push(rowData);
+            });
+            return tableData;
+        }
+
+        // CSV出力機能
+        function exportCSV() {
+            const tableData = collectTableData();
+            const csvHeader = '番号,動画タイトル,担当者,進捗状況,指示内容,格納場所,完成品格納場所,メモ\n';
+            
+            const csvData = tableData.map(row => {
+                return [
+                    row.number,
+                    `"${row.title.replace(/"/g, '""')}"`,
+                    `"${row.person.replace(/"/g, '""')}"`,
+                    `"${row.progress.replace(/"/g, '""')}"`,
+                    `"${row.instruction.replace(/"/g, '""')}"`,
+                    `"${row.storage.replace(/"/g, '""')}"`,
+                    `"${row.completed.replace(/"/g, '""')}"`,
+                    `"${row.memo.replace(/"/g, '""')}"`
+                ].join(',');
+            }).join('\n');
+
+            const csvContent = csvHeader + csvData;
+            const dataBlob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'video_management_data.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function addRow() {
+            const tableBody = document.getElementById('videoTableBody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td class="number-col">${rowCounter}</td>
+                <td class="title-col">
+                    <input type="text" placeholder="動画タイトル" oninput="onDataChange()">
+                </td>
+                <td class="person-col">
+                    <input type="text" placeholder="担当者名" oninput="onDataChange()">
+                </td>
+                <td class="progress-col">
+                    <select onchange="onDataChange()">
+                        <option value="">選択してください</option>
+                        <option value="未着手">未着手</option>
+                        <option value="進行中">進行中</option>
+                        <option value="レビュー中">レビュー中</option>
+                        <option value="完了">完了</option>
+                        <option value="保留">保留</option>
+                    </select>
+                </td>
+                <td class="instruction-col">
+                    <textarea placeholder="指示内容" oninput="onDataChange()"></textarea>
+                </td>
+                <td class="storage-col">
+                    <input type="text" placeholder="格納場所" oninput="onDataChange()">
+                </td>
+                <td class="completed-col">
+                    <input type="text" placeholder="完成品格納場所" oninput="onDataChange()">
+                </td>
+                <td class="memo-col">
+                    <textarea placeholder="メモ" oninput="onDataChange()"></textarea>
+                </td>
+                <td class="action-col">
+                    <button class="delete-btn" onclick="deleteRow(this)">削除</button>
+                </td>
+            `;
+            
+            tableBody.appendChild(newRow);
+            rowCounter++;
+            onDataChange();
+        }
+
+        function deleteRow(button) {
+            if (confirm('この行を削除しますか？')) {
+                const row = button.parentNode.parentNode;
+                row.parentNode.removeChild(row);
+                updateRowNumbers();
+                onDataChange();
+            }
+        }
+
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('#videoTableBody tr');
+            rows.forEach((row, index) => {
+                row.querySelector('.number-col').textContent = index + 1;
+            });
+            rowCounter = rows.length + 1;
+        }
+
+        function saveData() {
+            const tableData = collectTableData();
+            const dataStr = JSON.stringify(tableData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'video_management_data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            loadTableData(data);
+                        } catch (err) {
+                            alert('ファイルの読み込みに失敗しました。');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function loadTableData(data) {
+            const tableBody = document.getElementById('videoTableBody');
+            tableBody.innerHTML = '';
+            rowCounter = 1;
+
+            data.forEach(rowData => {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td class="number-col">${rowCounter}</td>
+                    <td class="title-col">
+                        <input type="text" value="${rowData.title || ''}" placeholder="動画タイトル" oninput="onDataChange()">
+                    </td>
+                    <td class="person-col">
+                        <input type="text" value="${rowData.person || ''}" placeholder="担当者名" oninput="onDataChange()">
+                    </td>
+                    <td class="progress-col">
+                        <select onchange="onDataChange()">
+                            <option value="">選択してください</option>
+                            <option value="未着手" ${rowData.progress === '未着手' ? 'selected' : ''}>未着手</option>
+                            <option value="進行中" ${rowData.progress === '進行中' ? 'selected' : ''}>進行中</option>
+                            <option value="レビュー中" ${rowData.progress === 'レビュー中' ? 'selected' : ''}>レビュー中</option>
+                            <option value="完了" ${rowData.progress === '完了' ? 'selected' : ''}>完了</option>
+                            <option value="保留" ${rowData.progress === '保留' ? 'selected' : ''}>保留</option>
+                        </select>
+                    </td>
+                    <td class="instruction-col">
+                        <textarea placeholder="指示内容" oninput="onDataChange()">${rowData.instruction || ''}</textarea>
+                    </td>
+                    <td class="storage-col">
+                        <input type="text" value="${rowData.storage || ''}" placeholder="格納場所" oninput="onDataChange()">
+                    </td>
+                    <td class="completed-col">
+                        <input type="text" value="${rowData.completed || ''}" placeholder="完成品格納場所" oninput="onDataChange()">
+                    </td>
+                    <td class="memo-col">
+                        <textarea placeholder="メモ" oninput="onDataChange()">${rowData.memo || ''}</textarea>
+                    </td>
+                    <td class="action-col">
+                        <button class="delete-btn" onclick="deleteRow(this)">削除</button>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+                rowCounter++;
+            });
+        }
+
+        // 初期化処理はloadFromLocalStorage()で実行
+        // ページ読み込み後に初期化を実行する
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
+        } else {
+            loadFromLocalStorage();
+        }
+        
+        // デバッグ用：新規追加関数の動作確認
+        console.log('addRow function:', typeof addRow);
+        console.log('Script loaded successfully');
+    </script>
+</body>
+</html>
